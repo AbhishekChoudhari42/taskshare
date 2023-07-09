@@ -12,29 +12,33 @@ import { io } from "socket.io-client";
 const Table = () => {
     
 
-    const socket = io('http://localhost:3030');
 
-
-    io.on("connection", (socket) => {
-    
-        socket.emit("hello", "world");
-        alert("connected")
-    
-    });
 
     const [taskInput,setTaskInput] = useState(false)
     const [taskDesc,setTaskDesc] = useState('')
     const table = useSelector((state)=>state.table)
     const dispatch = useDispatch()
+    const socket = io('http://localhost:3030');
 
     const addNewTask = () =>{
 
         dispatch(addTask({task:{id:uuid4(),desc:taskDesc},index:0}))
         setTaskDesc('')
+
+        socket.emit("update-table",table);
+
     
     }
 
     useEffect(()=>{
+
+        socket.on("connection", (socket) => {
+        
+            console.log("connectref")
+        
+        })
+
+        socket.emit('update-table',{client_data:"client101"})
         
     },[])
 
