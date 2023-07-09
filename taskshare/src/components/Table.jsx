@@ -6,8 +6,22 @@ import {v4 as uuid4} from 'uuid'
 import { ToastContainer } from 'react-toastify';
 import {GrAdd} from 'react-icons/gr'
 
+import { io } from "socket.io-client";
+
+
 const Table = () => {
     
+
+    const socket = io('http://localhost:3030');
+
+
+    io.on("connection", (socket) => {
+    
+        socket.emit("hello", "world");
+        alert("connected")
+    
+    });
+
     const [taskInput,setTaskInput] = useState(false)
     const [taskDesc,setTaskDesc] = useState('')
     const table = useSelector((state)=>state.table)
