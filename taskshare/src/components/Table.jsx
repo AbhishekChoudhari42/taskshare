@@ -1,72 +1,70 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import Stage from "./Stage"
 import { useSelector,useDispatch } from "react-redux"
-import {addTask} from '../redux_toolkit/features/tableSlice'
+import {addTask,updateTable} from '../redux_toolkit/features/tableSlice'
 import {v4 as uuid4} from 'uuid'
 import { ToastContainer } from 'react-toastify';
 import {GrAdd} from 'react-icons/gr'
-
-import { io } from "socket.io-client";
-
+import { useContext } from "react"
+import { SocketContext } from "../context/SocketContextProvider"
 
 const Table = () => {
     
-
-
-
-    const [taskInput,setTaskInput] = useState(false)
     const [taskDesc,setTaskDesc] = useState('')
+    let activeStage = null
+    const setActiveStage = ( index) =>{
+        activeStage = index
+    }
+    // const [activeStage,setActiveStage] = useState(null);
+    const color = ['border-neutral-900','border-blue-400','border-green-400']
+    const tableRef = useRef(null)
     const table = useSelector((state)=>state.table)
     const dispatch = useDispatch()
-    const socket = io('http://localhost:3030');
+    
+    const [stageWidth,setStageWidth] = useState(null)
+    
+    const socket = useContext(SocketContext)
 
     const addNewTask = () =>{
 
         dispatch(addTask({task:{id:uuid4(),desc:taskDesc},index:0}))
+        socket.emit('update-table',table)
         setTaskDesc('')
-
-        socket.emit("update-table",table);
-
     
     }
 
     useEffect(()=>{
 
-        socket.on("connection", (socket) => {
-        
-            console.log("connectref")
-        
-        })
+        socket.on("updated-table",(data)=>
+        {  
+           dispatch(updateTable({data:data}))
+       })
 
-        socket.emit('update-table',{client_data:"client101"})
-        
-    },[])
+
+    },[socket])
 
     
     
     return (<div className="w-full h-screen bg-black">
             
-            <ToastContainer theme="dark" autoClose="2000" position="top-center"/>
+            <ToastContainer theme="dark" autoClose="1000" position="top-center"/>
             
             <div className="h-[10%] flex justify-between items-center p-2 ">
-                    <h1 className="text-neutral-600 text-xl font-bold">Project Name</h1>
+                    {<h1 className="text-neutral-600 text-xl ml-2 font-bold">Project Name</h1>}
                    
-                    {taskInput && <div className="w-[300px] p-1 top-4 left-[50%] translate-x-[-50%] rounded-lg bg-[#111] flex justify-center items-center fixed ">
-                        <div className="w-[400px] flex">
-                            <input value={taskDesc} onChange={(e)=>{setTaskDesc(e.target.value)}} placeholder="New Task" className=" w-full  p-1 px-2 text-neutral-200 bg-neutral-800 rounded-md" type="text" />
-                            <button onClick={addNewTask} className=" bg-blue-600 text-white rounded-md ml-1 px-2"><GrAdd className="text-white font-bold"/></button>
-                        </div>
-                    </div>}
-                   
-                    <button onClick={()=>{setTaskInput(!taskInput)}} className={`  ${taskInput?"bg-red-500":"bg-white"} px-2 py-2 text-neutral-800 text-lg rounded-md`}>{taskInput?<GrAdd color="#fff" className="rotate-45"/>:<GrAdd/>}</button>
+                   <div className="flex mr-4">
+                        <input value={taskDesc} onChange={(e)=>{setTaskDesc(e.target.value)}} placeholder="New Task" className=" w-full max-w-[300px]  p-1 px-2 text-neutral-200 bg-neutral-900 text-neutral-400 rounded-md border-2 border-neutral-600 active:border-neutral-400" type="text" />
+                        <button onClick={addNewTask} className=" bg-white rounded-md ml-4 px-2"><GrAdd className="pointer-events-none font-bold"/></button>
+                   </div>   
+                       
             </div>
             
-            <div className="w-full h-[90%] bg-black flex">
+            <div ref={tableRef} className="w-full h-[90%] flex">
             
                 {table && 
 
-                    table?.table?.map(element => {
-                        return <Stage key={element.name} data={element} />
+                    table?.table?.map((element,index) => {
+                        return <Stage color={color[index]}  stageWidth={tableRef.current?.clientWidth/3} setActiveStage={setActiveStage} key={uuid4()} active={activeStage === index} data={element} />
                     })
                     
                 }

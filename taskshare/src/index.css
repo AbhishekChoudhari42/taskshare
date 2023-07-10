@@ -6,8 +6,10 @@
   padding:0;
   box-sizing:border-box;
   font-family: 'poppins';
+  outline: none;
 }
 body{
   width:100vw;
   height: 100vh;
 }
+
